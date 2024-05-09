@@ -1,38 +1,42 @@
 import numpy as np
+import pandas as pd
+from scipy.special import binom
+
 import random
 
 from bokeh.layouts import column, row
-from bokeh.models import Button, ColumnDataSource, Select, TextInput
-from bokeh.plotting import figure, curdoc
+from bokeh.models import Button, ColumnDataSource, Legend, Select, TextInput
+from bokeh.palettes import Colorblind
+from bokeh.plotting import figure, curdoc, show
 
 
-def roll_die(d=20):
-    result = random.randrange(start=1, stop=d+1, step=1)
-    #print(f"Rolled a D{d} and got {result}")
-    return result
-
-def roll_dice(n=1, d=20, normalize=False):
-    for _ in range(n):
-        yield roll_die(d=d)
+def prob(s, n, d):
+    return sum(
+        (-1)**k * binom(n, k) * binom(s - k*d - 1, n-1)
+        for k in range((s-n)//d+1)
+    )/d**n
 
 p = figure(width=800, height=800, title="Yo waddup?")
 p.xaxis.axis_label = "Sum"
 p.yaxis.axis_label = "Prob."
 
-l = p.line(source=ColumnDataSource(data=dict(zip("rp", [[], []]))), x="r", y="p")
 
-def plot_roll_stats():
-    n, d = 1, 20  # TODO
-    N = 10000
-    x = np.array(list(roll_dice(n=N, normalize=True)))
-    r, c = np.unique(x, return_counts=True)
-    p = c/N
-    new_data = dict(zip("rp", [r, p]))
-    l.data_source.data = new_data
+legend = dict()
 
-roll_input = TextInput(value="1d20", title="Roll: ")
-roll_button = Button(label="No whammy!", button_type="primary")
-roll_button.on_event("button_click", plot_roll_stats)
+for c, (n, d) in zip(Colorblind[8], (
+    (20,  3),
+    (10,  6),
+    ( 6, 10),
+    ( 3, 20),
+)):
+    source = ColumnDataSource(data=pd.DataFrame([
+        [_r, prob(_r, n, d)] for _r in range(1, n*d+1)
+    ], columns=["r", "p"]))
+    l = p.line(source=source, x="r", y="p", color=c)
+    m = p.scatter(source=source, x="r", y="p", color=c)
+    legend[f"{n}d{d}"] = [l, m]
 
-curdoc().add_root(column(row(roll_input, roll_button), p))
+p.add_layout(Legend(items=[(k, v) for k, v in legend.items()], location=(5, 30)))
+
+show(p)
 
