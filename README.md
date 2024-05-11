@@ -1,2 +1,2 @@
 # diceswing
-Comparative visualization of composite dice rolls
+Use [Bokeh](https://bokeh.org/) to plot analytical probability distributions of various dice rolls.
