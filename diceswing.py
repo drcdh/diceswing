@@ -11,6 +11,7 @@ from bokeh.plotting import figure, curdoc, show
 
 
 def prob(s, n, d):
+    # https://math.stackexchange.com/questions/2290090/probability-that-the-sum-of-k-dice-is-n
     return sum(
         (-1)**k * binom(n, k) * binom(s - k*d - 1, n-1)
         for k in range((s-n)//d+1)
